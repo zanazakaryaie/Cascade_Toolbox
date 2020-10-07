@@ -9,13 +9,10 @@ using namespace std;
 
 int main()
 {
-
     string videoName = selectFile("Select Video File", {"*.mp4", "*.avi"});
     VideoCapture cap(videoName);
 
     string modelName = selectFile("Select Cascade Model", {"*.xml"});
-
-    VideoWriter writer("output_simd_lbp.avi", VideoWriter::fourcc('M','J','P','G'), 14, Size(896,504));
 
     typedef Simd::Detection<Simd::Allocator> Detection;
 
@@ -31,8 +28,6 @@ int main()
 
         if (frame.empty())
             break;
-
-        resize(frame, frame, Size(), 0.7, 0.7);
 
         Detection::View image = frame;
 
@@ -59,14 +54,11 @@ int main()
 
         imshow("Detections", frame);
 
-        writer.write(frame);
-
         if (waitKey(1)=='q')
             break;
     }
 
     cap.release();
-    writer.release();
 
     return 0;
 }

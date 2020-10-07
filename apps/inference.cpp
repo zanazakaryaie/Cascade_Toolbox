@@ -23,8 +23,6 @@ int main()
         if (frame.empty())
             break;
 
-        //resize(frame, frame, Size(), 0.7, 0.7);
-
         auto t1 = std::chrono::high_resolution_clock::now();
 
         vector<Rect> objects;
