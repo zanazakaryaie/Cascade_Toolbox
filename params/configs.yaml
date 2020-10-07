@@ -1,0 +1,9 @@
+%YAML:1.0
+
+width: 40
+height: 27
+featureType: "HAAR"
+nStages: 20
+precalcValBufSize: 3500
+precalcIdxBufSize: 3500
+positiveImageRatio: 0.85
