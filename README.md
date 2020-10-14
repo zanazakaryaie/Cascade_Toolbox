@@ -1,5 +1,5 @@
-# Detection_Toolbox
-This is a toolbox to train, test, and run object detection algorithms. 
+# Cascade_Toolbox
+This is a toolbox to train, test, and run HAAR/LBP cascade easily. 
 
 # Dependencies
 - Cmake
@@ -8,15 +8,15 @@ This is a toolbox to train, test, and run object detection algorithms.
 
 # How to build?
 ```
-git clone https://github.com/zanazakaryaie/Detection_Toolbox.git
-cd Detection_Toolbox
+git clone https://github.com/zanazakaryaie/Cascade_Toolbox.git
+cd Cascade_Toolbox
 mkdir build && cd build
 cmake ..
 make
 ```
 If you want to use Simd library to accelerate the detection, replace the cmake command by:
 ```
-cmake -DBUILD_SIMD_INFERENCE=ON -DSIMD_LIBRARY_PATH=/home/odroid/Simd ..
+cmake -DBUILD_SIMD_INFERENCE=ON -DSIMD_LIBRARY_PATH=~/Simd ..
 ```
 # How to use?
 Run the generated executables in the build folder following this order:
