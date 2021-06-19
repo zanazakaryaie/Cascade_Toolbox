@@ -1,16 +1,16 @@
 #include "Annotator.hpp"
-
+#include "utils.hpp"
 
 //Initializing static variables
-bool Annotator::drawing;
-bool Annotator::moving;
-bool Annotator::editing;
-cv::Point2i Annotator::p1;
-std::vector<BoundingBox> Annotator::objects;
-cv::Mat Annotator::frame;
-cv::Mat Annotator::frameWithObjects;
-int Annotator::anchorIdx;
-int Annotator::objectIdx;
+bool Annotator::_drawing;
+bool Annotator::_moving;
+bool Annotator::_editing;
+cv::Point2i Annotator::_p1;
+std::vector<BoundingBox> Annotator::_objects;
+cv::Mat Annotator::_frame;
+cv::Mat Annotator::_frameWithObjects;
+int Annotator::_anchorIdx;
+int Annotator::_objectIdx;
 
 
 //----------------------------------------------------------------------------
@@ -25,8 +25,8 @@ Annotator::Annotator(ANNOT_MODE m)
     {
         createDirectory("Negatives");
         createDirectory("Positives");
-        sumWidth = 0;
-        sumHeight = 0;
+        _sumWidth = 0;
+        _sumHeight = 0;
     }
 
     if (mode==HARD_MINING)
@@ -35,12 +35,12 @@ Annotator::Annotator(ANNOT_MODE m)
     if (mode==TESTING)
         createDirectory("TestData");
 
-    drawing = false;
-    moving = false;
-    editing = false;
+    _drawing = false;
+    _moving = false;
+    _editing = false;
 
-    frameSteps = 10;
-    rng(0xFFFFFFFF);
+    _frameSteps = 10;
+    _rng(0xFFFFFFFF);
 }
 
 
@@ -48,21 +48,21 @@ Annotator::Annotator(ANNOT_MODE m)
 //----------------------------------------------------------------------------
 void Annotator::run(void)
 {
-    while (cap.isOpened())
+    while (_cap.isOpened())
     {
-        cap.read(frame);
+        _cap.read(_frame);
 
-        if (frame.empty())
+        if (_frame.empty())
             break;
 
         if (mode==HARD_MINING)
             detectObjects();
 
-        frame.copyTo(frameWithObjects);
+        _frame.copyTo(_frameWithObjects);
 
         while (true)
         {
-            cv::imshow("Draw objects", frameWithObjects);
+            cv::imshow("Draw objects", _frameWithObjects);
             cv::setMouseCallback("Draw objects", mouseCallBackFunc, NULL);
             drawObjects();
 
@@ -71,10 +71,10 @@ void Annotator::run(void)
         }
     }
 
-    cap.release();
+    _cap.release();
 
     if (mode==TRAINING || mode==HARD_MINING)
-        std::cout << "Average width/height: " << 1.f*sumWidth/sumHeight << std::endl;
+        std::cout << "Average width/height: " << 1.f*_sumWidth/_sumHeight << std::endl;
 }
 
 
@@ -83,10 +83,10 @@ void Annotator::run(void)
 void Annotator::detectObjects(void)
 {
     std::vector<cv::Rect> detectedBoxes;
-    detector.detectMultiScale(frame, detectedBoxes);
+    _detector.detectMultiScale(_frame, detectedBoxes);
 
     for (const auto& box : detectedBoxes)
-        objects.push_back(BoundingBox(box));
+        _objects.push_back(BoundingBox(box));
 }
 
 
@@ -98,20 +98,20 @@ int Annotator::checkKeyPressed(void)
 
     if (key=='+')
     {
-        std::cout << "Frame steps: " << ++frameSteps << std::endl;
+        std::cout << "Frame steps: " << ++_frameSteps << std::endl;
     }
 
     else if (key=='-')
     {
-        if (frameSteps>1)
+        if (_frameSteps>1)
         {
-            std::cout << "Frame steps: " << --frameSteps << std::endl;
+            std::cout << "Frame steps: " << --_frameSteps << std::endl;
         }
     }
 
     else if (key=='q')
     {
-        cap.release();
+        _cap.release();
         exit(1);
     }
 
@@ -119,12 +119,12 @@ int Annotator::checkKeyPressed(void)
     {
         saveSamples();
 
-        for (int i=1; i<frameSteps; i++)
+        for (int i=1; i<_frameSteps; i++)
         {
-            if (!cap.grab())
+            if (!_cap.grab())
             {
                 std::cerr << "No more frames to grab! Reached the end of the video file" << std::endl;
-                cap.release();
+                _cap.release();
                 exit(1);
             }
         }
@@ -140,8 +140,8 @@ int Annotator::checkKeyPressed(void)
 //----------------------------------------------------------------------------
 void Annotator::selectVideoFile(void)
 {
-    std::string filename = selectFile("Choose the video file", {"*.mp4", "*.avi"});
-    cap.open(filename);
+    const auto filename = selectFile("Choose the video file", {".mp4", ".avi"});
+    _cap.open(filename);
 }
 
 
@@ -149,8 +149,8 @@ void Annotator::selectVideoFile(void)
 //----------------------------------------------------------------------------
 void Annotator::selectCascadeModel(void)
 {
-    std::string filename = selectFile("Choose the cascade model", {"*.xml"});
-    detector.load(filename);
+    const auto filename = selectFile("Choose the cascade model", {".xml"});
+    _detector.load(filename);
 }
 
 
@@ -175,8 +175,8 @@ void Annotator::mouseCallBackFunc(int event, int x, int y, int flags, void* user
     else if  ( event == cv::EVENT_MBUTTONDOWN )
         checkMiddleButtonDown(p);
 
-    else if (moving &&  event == cv::EVENT_MBUTTONUP )
-        moving = false;
+    else if (_moving &&  event == cv::EVENT_MBUTTONUP )
+        _moving = false;
 }
 
 
@@ -184,17 +184,17 @@ void Annotator::mouseCallBackFunc(int event, int x, int y, int flags, void* user
 //----------------------------------------------------------------------------
 void Annotator::checkLeftButtonDown(const cv::Point2i p)
 {
-    p1 = p;
-    objectIdx = isAnchor(p1, anchorIdx);
+    _p1 = p;
+    _objectIdx = isAnchor(_p1, _anchorIdx);
 
-    if (objectIdx>=0)
+    if (_objectIdx >= 0)
     {
-        editing = true;
+        _editing = true;
     }
     else
     {
-        drawing = true;
-        objects.push_back(BoundingBox(p1,p1));
+        _drawing = true;
+        _objects.push_back(BoundingBox(_p1,_p1));
     }
 }
 
@@ -203,19 +203,19 @@ void Annotator::checkLeftButtonDown(const cv::Point2i p)
 //----------------------------------------------------------------------------
 void Annotator::checkMouseMove(const cv::Point2i p)
 {
-    if (drawing)
+    if (_drawing)
     {
-        objects.back() = BoundingBox(p1, p);
+        _objects.back() = BoundingBox(_p1, p);
     }
-    else if (moving)
+    else if (_moving)
     {
-        objects[objectIdx].move(p.x-p1.x, p.y-p1.y);
-        p1.x = p.x;
-        p1.y = p.y;
+        _objects[_objectIdx].move(p.x-_p1.x, p.y-_p1.y);
+        _p1.x = p.x;
+        _p1.y = p.y;
     }
-    else if (editing)
+    else if (_editing)
     {
-        editBox(objects[objectIdx], anchorIdx, p);
+        editBox(_objects[_objectIdx], _anchorIdx, p);
     }
 }
 
@@ -224,19 +224,19 @@ void Annotator::checkMouseMove(const cv::Point2i p)
 //----------------------------------------------------------------------------
 void Annotator::checkLeftButtonUp(const cv::Point2i p)
 {
-    if (drawing)
+    if (_drawing)
     {
-        drawing = false;
+        _drawing = false;
 
-        if (abs(p.x-p1.x)<10 && abs(p.y-p1.y)<10)
+        if (abs(p.x-_p1.x)<10 && abs(p.y-_p1.y)<10)
         {
             std::cout << "Objects smaller than 10x10 pixels are removed automatically" << std::endl;
-            objects.pop_back();
+            _objects.pop_back();
         }
     }
-    else if (editing)
+    else if (_editing)
     {
-        editing = false;
+        _editing = false;
     }
 }
 
@@ -245,14 +245,14 @@ void Annotator::checkLeftButtonUp(const cv::Point2i p)
 //----------------------------------------------------------------------------
 void Annotator::checkMiddleButtonDown(const cv::Point2i p)
 {
-    p1 = p;
+    _p1 = p;
 
-    for (size_t i=0; i<objects.size(); i++)
+    for (size_t i=0; i<_objects.size(); i++)
     {
-        if (objects[i].doesContain(p1))
+        if (_objects[i].doesContain(_p1))
         {
-            objectIdx = i;
-            moving = true;
+            _objectIdx = i;
+            _moving = true;
             break;
         }
     }
@@ -305,9 +305,9 @@ void Annotator::editBox(BoundingBox& box, int anchorNo, const cv::Point2i p)
 //----------------------------------------------------------------------------
 int Annotator::isAnchor(const cv::Point2i p, int &anchorNo)
 {
-    for (size_t i=0; i<objects.size(); i++)
+    for (size_t i=0; i<_objects.size(); i++)
     {
-        const BoundingBox& object = objects[i];
+        const BoundingBox& object = _objects[i];
 
         if (abs(p.x - object.tl.x)<10 && abs(p.y - object.tl.y)<10)
         {
@@ -367,7 +367,7 @@ void Annotator::saveSamples(void)
     else //TRAINING or HARD_MINING
         saveTrainData();
 
-    objects.clear();
+    _objects.clear();
 }
 
 
@@ -375,12 +375,12 @@ void Annotator::saveSamples(void)
 //----------------------------------------------------------------------------
 void Annotator::saveNegatives(void)
 {
-    std::vector<cv::Rect> negatives = extractRandomNegatives();
+    const auto negatives = extractRandomNegatives();
     for (size_t i=0; i<negatives.size(); i++)
     {
         std::ostringstream name;
         name << "Negatives/" << currentDateTime() << "_" << i << ".png";
-        cv::imwrite(name.str(), frame(negatives[i]));
+        cv::imwrite(name.str(), _frame(negatives[i]));
     }
 }
 
@@ -389,20 +389,20 @@ void Annotator::saveNegatives(void)
 //----------------------------------------------------------------------------
 void Annotator::saveTestData(void) const
 {
-    if (objects.size()>0)
+    if (_objects.size()>0)
     {
-        cv::Rect frameRect = cv::Rect(0,0,frame.cols, frame.rows);
+        const auto frameRect = cv::Rect(0,0,_frame.cols, _frame.rows);
 
-        int frameIdx = cap.get(cv::CAP_PROP_POS_FRAMES);
+        int frameIdx = _cap.get(cv::CAP_PROP_POS_FRAMES);
         std::ostringstream name;
         name << "TestData/" << frameIdx-1 << ".txt";
         std::ofstream test_data(name.str());
 
         if (test_data.is_open())
         {
-            for (const auto& object : objects)
+            for (const auto& object : _objects)
             {
-                cv::Rect intersection = frameRect & object.getRect(); //Avoid crash when a part of the object is outside the frame
+                const auto intersection = frameRect & object.getRect(); //Avoid crash when a part of the object is outside the frame
                 test_data << intersection.x << " " << intersection.y << " " << intersection.width << " " << intersection.height << std::endl;
             }
 
@@ -416,27 +416,26 @@ void Annotator::saveTestData(void) const
 //----------------------------------------------------------------------------
 void Annotator::saveTrainData(void)
 {
-    cv::Rect frameRect = cv::Rect(0,0,frame.cols, frame.rows);
+    const auto frameRect = cv::Rect(0,0,_frame.cols, _frame.rows);
 
-    for (size_t i=0; i<objects.size(); i++)
+    for (size_t i=0; i<_objects.size(); i++)
     {
-        cv::Rect intersection = frameRect & objects[i].getRect(); //Avoid crash when a part of the object is outside the frame
+        if (_objects[i].mode == DETECTED) continue;
 
-        if (objects[i].mode==DRAWN)
-        {
-            std::ostringstream name;
+        const auto intersection = frameRect & _objects[i].getRect(); //Avoid crash when a part of the object is outside the frame
+
+        std::ostringstream name;
+
+        if (_objects[i].mode == DRAWN)
             name << "Positives/" << currentDateTime() << "_" << i << ".png";
-            cv::imwrite(name.str(), frame(intersection));
-        }
-        else if (objects[i].mode==HIDDEN)
-        {
-            std::ostringstream name;
-            name << "Negatives/" << currentDateTime() << "_" << i << ".png";
-            cv::imwrite(name.str(), frame(intersection));
-        }
 
-        sumWidth+=intersection.width;
-        sumHeight+=intersection.height;
+        else if (_objects[i].mode == HIDDEN)
+            name << "Negatives/" << currentDateTime() << "_" << i << ".png";
+
+        cv::imwrite(name.str(), _frame(intersection));
+
+        _sumWidth+=intersection.width;
+        _sumHeight+=intersection.height;
     }
 }
 
@@ -447,14 +446,14 @@ std::vector<cv::Rect> Annotator::extractRandomNegatives(void)
 {
     std::vector<cv::Rect> negatives;
 
-    const size_t N = 2*objects.size(); //A rule of thumb is to have twice negatives
+    const size_t N = 2*_objects.size(); //A rule of thumb is to have twice negatives
 
     while (negatives.size() < N)
     {
-        int x = rng.uniform(0, frame.cols);
-        int y = rng.uniform(0, frame.rows);
-        int width = rng.uniform(0, frame.cols-x);
-        int height = rng.uniform(0, frame.rows-y);
+        int x = _rng.uniform(0, _frame.cols);
+        int y = _rng.uniform(0, _frame.rows);
+        int width = _rng.uniform(0, _frame.cols-x);
+        int height = _rng.uniform(0, _frame.rows-y);
 
         if (width<10 || height<10) //Regions smaller than 10x10 pixels are removed
             continue;
@@ -463,10 +462,10 @@ std::vector<cv::Rect> Annotator::extractRandomNegatives(void)
         if (aspectRatio>5 || aspectRatio<0.2) //Very long or wide regions are not good
             continue;
 
-        cv::Rect2i negativeCandidate = cv::Rect2i(x,y,width,height);
+        const auto negativeCandidate = cv::Rect2i(x,y,width,height);
 
         int intersection = 0;
-        for (const auto& object : objects)
+        for (const auto& object : _objects)
             intersection+=(negativeCandidate & object.getRect()).area();
 
         if (intersection==0) //No intersection with positives
@@ -488,14 +487,14 @@ std::vector<cv::Rect> Annotator::extractRandomNegatives(void)
 //----------------------------------------------------------------------------
 void Annotator::removeObject(const cv::Point2i p)
 {
-    for (size_t i=0; i<objects.size(); i++)
+    for (size_t i=0; i<_objects.size(); i++)
     {
-        BoundingBox &object = objects[i];
+        BoundingBox &object = _objects[i];
 
         if (object.mode!=HIDDEN && object.doesContain(p))
         {
             if (object.mode==DRAWN)
-                objects.erase(objects.begin()+i);
+                _objects.erase(_objects.begin()+i);
             else //mode=DETECTED
                 object.mode=HIDDEN;
 
@@ -509,9 +508,9 @@ void Annotator::removeObject(const cv::Point2i p)
 //----------------------------------------------------------------------------
 void Annotator::drawObjects(void)
 {
-    frame.copyTo(frameWithObjects);
+    _frame.copyTo(_frameWithObjects);
 
-    for (const auto &object : objects)
-        if (object.mode!=HIDDEN)
-            object.drawOn(frameWithObjects);
+    for (const auto &object : _objects)
+        if (object.mode != HIDDEN)
+            object.drawOn(_frameWithObjects);
 }

@@ -1,3 +1,9 @@
+#include <fstream>
+#include <iostream>
+#include <filesystem>
+#include <opencv2/opencv.hpp>
+
+#include "utils.hpp"
 #include "CascadeTrainer.hpp"
 
 
@@ -16,20 +22,20 @@ CascadeTrainer::CascadeTrainer(void)
 //----------------------------------------------------------------------------
 void CascadeTrainer::start(void)
 {
-    std::string modelFolder = cv::utils::fs::getcwd() + "/model/";
+    const auto modelFolder = std::filesystem::current_path().string() + "/model/";
 
     createDirectory(modelFolder);
 
     runTrainCascadeCommand();
 
     //Check if all stages have been completed
-    std::vector<cv::String> stageNames = listFiles(modelFolder, {"*.xml"});
+    const auto stageNames = listFiles(modelFolder, {".xml"});
 
     int nStagesCompleted = stageNames.size()-1; //excluding params.xml file
 
-    if (nStagesCompleted < nStages)
+    if (nStagesCompleted < _nStages)
     {
-        nStages = nStagesCompleted;
+        _nStages = nStagesCompleted;
         runTrainCascadeCommand();
     }
 }
@@ -39,13 +45,13 @@ void CascadeTrainer::start(void)
 //----------------------------------------------------------------------------
 void CascadeTrainer::checkPreviousTraining(void) const
 {
-    std::string modelFolder = cv::utils::fs::getcwd() + "/model/";
+    const auto modelFolder = std::filesystem::current_path().string() + "/model/";
 
     if (doesExist(modelFolder))
     {
-        std::vector<cv::String> stageNames = listFiles(modelFolder, {"*.xml"});
+        const auto stageNames = listFiles(modelFolder, {".xml"});
 
-        if (stageNames.size()!=0)
+        if (!stageNames.empty())
         {
             std::cout << "There seem to be a trained model in " << modelFolder << std::endl;
             std::cout << "Press 'r' to Remove and start training a new model, or press 'c' to continue with this model" << std::endl;
@@ -64,23 +70,20 @@ void CascadeTrainer::checkPreviousTraining(void) const
 //----------------------------------------------------------------------------
 void CascadeTrainer::readConfigs(void)
 {
-    std::string configFileName = selectFile("Select config file", {"*.yaml"});
+    const auto configFileName = selectFile("Select config file", {".yaml"});
 
     cv::FileStorage fs(configFileName, cv::FileStorage::READ);
 
     if (!fs.isOpened())
-    {
-        std::cerr << "Error loading config file!" << std::endl;
-        exit(1);
-    }
+        throw std::runtime_error("Error loading config file!");
 
-    width = fs["width"];
-    height = fs["height"];
-    fs["featureType"] >> featureType;
-    nStages = fs["nStages"];
-    valBufSize = fs["precalcValBufSize"];
-    idxBufSize = fs["precalcIdxBufSize"];
-    posRatio = fs["positiveImageRatio"];
+    _width = fs["width"];
+    _height = fs["height"];
+    fs["featureType"] >> _featureType;
+    _nStages = fs["nStages"];
+    _valBufSize = fs["precalcValBufSize"];
+    _idxBufSize = fs["precalcIdxBufSize"];
+    _posRatio = fs["positiveImageRatio"];
 
     fs.release();
 }
@@ -90,29 +93,29 @@ void CascadeTrainer::readConfigs(void)
 //----------------------------------------------------------------------------
 void CascadeTrainer::generatePosVecFile(void)
 {
-    std::string positiveFolder = selectFolder("Select Positive Folder");
+    const auto positiveFolder = selectFolder("Select Positive Folder");
 
-    std::vector<cv::String> posImageNames = listFiles(positiveFolder, {"*.jpg", "*.png", "*.bmp"});
+    const auto posImageNames = listFiles(positiveFolder, {".jpg", ".png", ".bmp"});
 
-    nPos = posImageNames.size();
+    _nPos = posImageNames.size();
 
     std::ofstream out("positives.txt");
 
     if (out.is_open())
     {
-        std::string resizedPosFolder = positiveFolder+"/Positives_resized/";
+        const auto resizedPosFolder = positiveFolder+"/Positives_resized/";
         createDirectory(resizedPosFolder);
 
         for (const auto& pos: posImageNames)
         {
-            std::string originalName = positiveFolder+"/"+pos;
-            cv::Mat img = cv::imread(originalName);
-            cv::resize(img, img, cv::Size(width,height));
+            const auto originalName = positiveFolder+"/"+pos;
+            auto img = cv::imread(originalName);
+            cv::resize(img, img, cv::Size(_width, _height));
 
-            std::string resizedName = resizedPosFolder + pos;
+            const auto resizedName = resizedPosFolder + pos;
             cv::imwrite(resizedName, img);
 
-            out << resizedName << " 1 0 0 " << width-1 << " " << height-1 <<std::endl;
+            out << resizedName << " 1 0 0 " << _width-1 << " " << _height-1 << std::endl;
         }
 
         out.close();
@@ -124,8 +127,7 @@ void CascadeTrainer::generatePosVecFile(void)
     }
     else
     {
-        std::cerr << "Cannot make positives.txt file!" << std::endl;
-        exit(1);
+        throw std::runtime_error("Cannot make positives.txt file!");
     }
 }
 
@@ -134,11 +136,11 @@ void CascadeTrainer::generatePosVecFile(void)
 //----------------------------------------------------------------------------
 void CascadeTrainer::generateNegTxtFile(void)
 {
-    std::string negativeFolder = selectFolder("Select Negative Folder");
+    const auto negativeFolder = selectFolder("Select Negative Folder");
 
-    std::vector<cv::String> negImageNames = listFiles(negativeFolder, {"*.jpg", "*.png", "*.bmp"}, false);
+    const auto negImageNames = listFiles(negativeFolder, {".jpg", ".png", ".bmp"}, false);
 
-    nNegs = negImageNames.size();
+    _nNegs = negImageNames.size();
 
     std::ofstream out("negatives.txt");
 
@@ -151,8 +153,7 @@ void CascadeTrainer::generateNegTxtFile(void)
     }
     else
     {
-        std::cerr << "Cannot make negatives.txt file!" << std::endl;
-        exit(1);
+        throw std::runtime_error("Cannot make negatives.txt file!");
     }
 }
 
@@ -162,14 +163,11 @@ void CascadeTrainer::generateNegTxtFile(void)
 void CascadeTrainer::runCreateSampleCommand(void) const
 {
     std::ostringstream command;
-    command << "opencv_createsamples -info positives.txt -num " << nPos << " -w " << width << " -h " << height << " -vec pos-samples.vec" << std::endl;
+    command << "opencv_createsamples -info positives.txt -num " << _nPos << " -w " << _width << " -h " << _height << " -vec pos-samples.vec" << std::endl;
     int status = system(command.str().c_str());
 
     if (status!=0)
-    {
-        std::cerr << "Error in creating .vec file from positive images!" << std::endl;
-        exit(1);
-    }
+        throw std::runtime_error("Error in creating .vec file from positive images!");
 }
 
 
@@ -178,9 +176,12 @@ void CascadeTrainer::runCreateSampleCommand(void) const
 void CascadeTrainer::runTrainCascadeCommand(void) const
 {
     std::ostringstream command;
-    command << "opencv_traincascade -data "<< cv::utils::fs::getcwd() << "/model -vec pos-samples.vec -bg negatives.txt -precalcValBufSize "
-            <<  valBufSize << " -precalcIdxBufSize " << idxBufSize << " -numPos " << posRatio*nPos << " -numNeg " << nNegs << " -numStages "
-            << nStages << " -minHitRate 0.99 -maxFalseAlarmRate 0.5 -w " << width << " -h " << height << " -featureType " << featureType << std::endl;
+    command << "opencv_traincascade -data "<< std::filesystem::current_path().string() << "/model -vec pos-samples.vec -bg negatives.txt -precalcValBufSize "
+            <<  _valBufSize << " -precalcIdxBufSize " << _idxBufSize << " -numPos " << _posRatio*_nPos << " -numNeg " << _nNegs << " -numStages "
+            << _nStages << " -minHitRate 0.99 -maxFalseAlarmRate 0.5 -w " << _width << " -h " << _height << " -featureType " << _featureType << std::endl;
 
-    system(command.str().c_str());
+    int status = system(command.str().c_str());
+
+    if (status!=0)
+        throw std::runtime_error("Something went wrong in the training process!");
 }
