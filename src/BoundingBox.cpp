@@ -10,8 +10,8 @@ BoundingBox::BoundingBox(const cv::Point2i p1, const cv::Point2i p2, BOX_MODE m)
 
     tl = cv::Point2i(min_x, min_y);
 
-    width = abs(p1.x-p2.x);
-    height = abs(p1.y-p2.y);
+    _width = abs(p1.x-p2.x);
+    _height = abs(p1.y-p2.y);
 
     calcAnchros();
 
@@ -25,8 +25,8 @@ BoundingBox::BoundingBox(const cv::Rect rectangle, BOX_MODE m)
 {
     tl = cv::Point2i(rectangle.x, rectangle.y);
 
-    width = rectangle.width;
-    height = rectangle.height;
+    _width = rectangle.width;
+    _height = rectangle.height;
 
     calcAnchros();
 
@@ -38,8 +38,8 @@ BoundingBox::BoundingBox(const cv::Rect rectangle, BOX_MODE m)
 //----------------------------------------------------------------------------
 void BoundingBox::setTopLeftCorner(const cv::Point2i p)
 {
-    width += tl.x-p.x;
-    height += tl.y-p.y;
+    _width += tl.x-p.x;
+    _height += tl.y-p.y;
 
     tl = p;
 
@@ -51,8 +51,8 @@ void BoundingBox::setTopLeftCorner(const cv::Point2i p)
 //----------------------------------------------------------------------------
 void BoundingBox::setBottomRightCorner(const cv::Point2i p)
 {
-    width += p.x-br.x;
-    height += p.y-br.y;
+    _width += p.x-br.x;
+    _height += p.y-br.y;
 
     calcAnchros();
 }
@@ -92,9 +92,11 @@ void BoundingBox::move(int deltaX, int deltaY)
 //----------------------------------------------------------------------------
 void BoundingBox::drawOn(cv::Mat &frame) const
 {
-    cv::rectangle(frame, getRect(), cv::Scalar(0,255,0), 2);
+    auto copiedFrame = frame.clone();
+    cv::rectangle(copiedFrame, getRect(), cv::Scalar(0,255,0), -1);
+    cv::addWeighted(copiedFrame, 0.3, frame, 0.7, 0, frame);
 
-    const cv::Point2i shift = cv::Point2i(5,5);
+    const auto shift = cv::Point2i(5,5);
 
     //Anchors
     cv::rectangle(frame, cv::Rect2i(tl-shift, tl+shift), cv::Scalar(0,255,0), 2);
@@ -112,17 +114,17 @@ void BoundingBox::drawOn(cv::Mat &frame) const
 //----------------------------------------------------------------------------
 void BoundingBox::calcAnchros(void)
 {
-    br.x = tl.x+width;
-    br.y = tl.y+height;
+    br.x = tl.x+_width;
+    br.y = tl.y+_height;
 
-    tm.x = tl.x+(width/2);
+    tm.x = tl.x+(_width/2);
     tm.y = tl.y;
 
     tr.x = br.x;
     tr.y = tl.y;
 
     ml.x = tl.x;
-    ml.y = tl.y+(height/2);
+    ml.y = tl.y+(_height/2);
 
     mr.x = br.x;
     mr.y = ml.y;
