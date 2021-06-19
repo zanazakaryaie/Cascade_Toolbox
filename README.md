@@ -2,8 +2,19 @@
 This is a toolbox to train, test, and run HAAR/LBP cascade easily. 
 
 ## Dependencies
+- C++17
 - Cmake
-- OpenCV (versions 2 or 3 - built with Boost)
+```
+sudo apt install cmake
+```
+- Zenity
+```
+sudo apt install zenity
+```
+- OpenCV (versions 2 or 3)
+```
+sudo apt install libopencv-dev
+```
 - [Simd](https://github.com/ermig1979/Simd) (Optional)
 
 ## How to build?
@@ -25,6 +36,7 @@ Run the generated executables in the build folder following this order:
     <br />Input: a training video (.mp4 or .avi)
     <br />Instructions: draw and edit positive boxes with mouse (no need to draw negatives), press space to move to the next frames
     <br />Output: Positive and Negative folders that contain sample images
+    ![Demo Collect train data](https://j.gifs.com/OM0NWR.gif)
     
 2. **collect_test_data**
     <br />Input: a testing video (.mp4 or .avi)
@@ -51,7 +63,8 @@ Run the generated executables in the build folder following this order:
 7. **inference** or **inference_simd** (if linked with Simd library)
     <br />Input: a video (.mp4 or .avi) and the trained .xml model
     <br />Output: the video played with detected objects and FPS
-
+    ![Demo inference](https://j.gifs.com/OM0NWR.gif)
+    
 ## Appendix
 For more details read my posts on [cascade algorithm](http://imrid.net/?p=4367) and [training a cascade model](http://imrid.net/?p=4378)
 
