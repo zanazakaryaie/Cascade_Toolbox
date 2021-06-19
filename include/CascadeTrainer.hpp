@@ -1,8 +1,6 @@
 #pragma once
 
-#include <fstream>
-#include <opencv2/opencv.hpp>
-#include "utils.hpp"
+#include <string>
 
 class CascadeTrainer
 {
@@ -23,13 +21,13 @@ private:
 
 
     //Configurations
-    int width;
-    int height;
-    std::string featureType; //HAAR | LBP
-    int nStages;
-    int valBufSize;
-    int idxBufSize;
-    float posRatio; //(0-1)
+    int _width;
+    int _height;
+    std::string _featureType; //HAAR | LBP
+    int _nStages;
+    int _valBufSize;
+    int _idxBufSize;
+    float _posRatio; //(0-1)
 
-    int nPos, nNegs;
+    int _nPos, _nNegs;
 };

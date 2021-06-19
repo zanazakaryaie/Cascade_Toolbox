@@ -1,10 +1,6 @@
 #pragma once
 
-#include <iostream>
-#include <numeric>
-#include <chrono>
 #include <opencv2/opencv.hpp>
-#include "utils.hpp"
 
 class CascadeTester
 {
@@ -16,15 +12,15 @@ public:
 private:
 
     bool parseGroundTruth(const std::string &fileName, std::vector<cv::Rect> &objects) const; //Parses boxes from the annotation file
-    int extractFrameNumberFromFileName(const std::string &filename) const;
+    uint32_t extractFrameNumberFromFileName(const std::string &filename) const;
     void check(const std::vector<cv::Rect> &detectObjects, const std::vector<cv::Rect> &groundTruth); //Counts and updates TP,FP,and FN
     float IoU(const cv::Rect &a, const cv::Rect &b) const; //Calculates Intersection-over-Union of two boxes
 
-    cv::VideoCapture cap;
-    cv::CascadeClassifier detector;
-    std::string testFolder;
+    cv::VideoCapture _cap;
+    cv::CascadeClassifier _detector;
+    std::string _testFolder;
 
-    int TP; //True Positive
-    int FP; //False Positive
-    int FN; //False Negative
+    uint32_t _TP; //True Positive
+    uint32_t _FP; //False Positive
+    uint32_t _FN; //False Negative
 };

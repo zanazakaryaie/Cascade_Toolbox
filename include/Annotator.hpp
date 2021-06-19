@@ -1,7 +1,7 @@
 #pragma once
 
 #include "BoundingBox.hpp"
-#include "utils.hpp"
+#include <opencv2/opencv.hpp>
 
 enum ANNOT_MODE {TRAINING, HARD_MINING, TESTING};
 
@@ -38,18 +38,18 @@ private:
     void saveTrainData(void);
 
 
-    cv::VideoCapture cap;
-    cv::CascadeClassifier detector;
-    static bool drawing;
-    static bool moving;
-    static bool editing;
-    static cv::Point2i p1;
-    static std::vector<BoundingBox> objects; //Positive samples drawn by the user, or detected by the cascade model
-    static cv::Mat frame;
-    static cv::Mat frameWithObjects;
-    static int anchorIdx;
-    static int objectIdx;
-    int frameSteps;
-    cv::RNG rng; //Used for random generation of negative samples
-    unsigned int sumWidth, sumHeight; //Used to find the average aspect ratio of the positive objects in TRAINING mode. This helps the user to set proper width/height when training a model
+    cv::VideoCapture _cap;
+    cv::CascadeClassifier _detector;
+    static bool _drawing;
+    static bool _moving;
+    static bool _editing;
+    static cv::Point2i _p1;
+    static std::vector<BoundingBox> _objects; //Positive samples drawn by the user, or detected by the cascade model
+    static cv::Mat _frame;
+    static cv::Mat _frameWithObjects;
+    static int _anchorIdx;
+    static int _objectIdx;
+    int _frameSteps;
+    cv::RNG _rng; //Used for random generation of negative samples
+    uint32_t _sumWidth, _sumHeight; //Used to find the average aspect ratio of the positive objects in TRAINING mode. This helps the user to set proper width/height when training a model
 };

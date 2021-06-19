@@ -1,5 +1,5 @@
 #pragma once
-#include <opencv2/opencv.hpp>
+#include <opencv2/imgproc.hpp>
 
 enum BOX_MODE {DRAWN, DETECTED, HIDDEN};
 
@@ -28,7 +28,7 @@ public:
 
 private:
 
-    int width;
-    int height;
+    int _width;
+    int _height;
     void calcAnchros(void); //Calculates anchor positions. It requires Top-left corner, width, and height of the box
 };
