@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 project(CascadeToolbox)
 
 SET(CMAKE_BUILD_TYPE Release)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -O3 -std=c++14")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -O3 -std=c++17")
 
 option(BUILD_SIMD_INFERENCE "Builds the inference_simd.cpp using Simd library" OFF)
 set(SIMD_LIBRARY_PATH "" CACHE PATH "Path to the cloned Simd library")
