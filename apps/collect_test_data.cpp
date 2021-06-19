@@ -5,22 +5,21 @@ using namespace std;
 
 void printHelp(void)
 {
-    cout << "Select a video file when the dialog box pops-up" << endl;
-    cout << "Left-click and drag to draw an object" << endl;
-    cout << "Left-click on the anchors and and drag to edit the object" << endl;
-    cout << "Right-click in an object to remove it" << endl;
-    cout << "Press space to go to the next 10th frame" << endl;
-    cout << "Press + and - to increase and decrease the step when space is pressed" << endl;
-    cout << "Press q to exit annotating" << endl;
+    cout << "Help" << endl;
+    cout << "==================================================" << endl;
+    cout << "1- Select a video file when the dialog box pops-up" << endl;
+    cout << "2- Left-click and drag to draw an object" << endl;
+    cout << "3- Left-click on the anchors and and drag to edit the object" << endl;
+    cout << "4- Right-click in an object to remove it" << endl;
+    cout << "5- Press space to go to the next 10th frame" << endl;
+    cout << "6- Press + and - to increase and decrease the step when space is pressed" << endl;
+    cout << "7- Press q to exit annotating" << endl;
+    cout << "==================================================" << endl;
 }
 
-int main(int argc, char* argv[])
+int main(void)
 {
-    if (argc==2 && (strcmp(argv[1], "--help") || strcmp(argv[1], "-help")))
-    {
-        printHelp();
-        return 0;
-    }
+    printHelp();
 
     Annotator annot(TESTING);
 
